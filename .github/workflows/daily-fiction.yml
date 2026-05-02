@@ -1,0 +1,55 @@
+name: Daily Fiction Generator
+
+on:
+  schedule:
+    # UTC 08:00 = JST 17:00
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+    inputs:
+      date_override:
+        description: 'Override date (YYYY-MM-DD, optional)'
+        required: false
+        default: ''
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install anthropic
+
+      - name: Generate daily fiction
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TZ: Asia/Tokyo
+        run: |
+          cd $GITHUB_WORKSPACE
+          python src/generate_daily_fiction.py
+
+      - name: Commit and push output
+        run: |
+          git config --global user.name 'Fiction Bot'
+          git config --global user.email 'fiction-bot@github-actions.noreply'
+          git add output/ data/
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            TODAY=$(date +%Y-%m-%d --date='TZ=Asia/Tokyo')
+            git commit -m "Auto: Generate fiction for ${TODAY}"
+            git push
+          fi
