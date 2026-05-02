@@ -49,7 +49,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
-            TODAY=$(date +%Y-%m-%d --date='TZ=Asia/Tokyo')
+            TODAY=$(TZ=Asia/Tokyo date +%Y-%m-%d)
             git commit -m "Auto: Generate fiction for ${TODAY}"
             git push
           fi
